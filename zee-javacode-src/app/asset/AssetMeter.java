@@ -1,4 +1,4 @@
-package guide.app.asset;1
+package guide.app.asset;
 
 import java.rmi.RemoteException;
 import java.util.Date;
