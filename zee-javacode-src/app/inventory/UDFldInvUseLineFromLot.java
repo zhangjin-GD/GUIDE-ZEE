@@ -35,7 +35,7 @@ public class UDFldInvUseLineFromLot extends FldInvUseLineFromLot {
 		MboRemote owner = mbo.getOwner();
 		if (owner != null && owner instanceof UDInvUse && !this.getMboValue().isNull()) {
 			String appType = owner.getString("udapptype");
-			if ("TRANSFER".equalsIgnoreCase(appType)) {
+			if ("TRANSFER".equalsIgnoreCase(appType) || "TRANSFERZEE".equalsIgnoreCase(appType)) {
 				if (!mbo.isNull("fromlot")) {
 					String fromlot = mbo.getString("fromlot");
 					mbo.setValue("tolot", fromlot, 11L);

@@ -62,13 +62,13 @@ public class UDPrLineIssueQty extends MAXTableDomain{
 						}
 			}else if(roundfactor.equals("") || roundfactor == 0){
 					if(mbo.getDouble("udissueqty") > 0){
-						mbo.setValue("orderqty", mbo.getDouble("udissueqty")*conversion, 11L);
+						mbo.setValue("orderqty", mbo.getDouble("udissueqty")/conversion, 11L);
 				}
 			}
 		}
 	}else if(udconversionSet.isEmpty() || udconversionSet.count() == 0){
 				if(mbo.getDouble("udissueqty") >= 0){
-				mbo.setValue("orderqty", mbo.getDouble("udissueqty")*mbo.getDouble("conversion"), 2L);
+				mbo.setValue("orderqty", mbo.getDouble("udissueqty")/mbo.getDouble("conversion"), 2L);
 				}else if(mbo.getDouble("udissueqty") < 0){
 					Object params[] = { " Issue quantity cannot be less than 0 !  "};
 					throw new MXApplicationException("instantmessaging", "tsdimexception",params);

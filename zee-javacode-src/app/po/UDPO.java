@@ -745,10 +745,7 @@ public class UDPO extends PO implements PORemote {
 				toPOLine.setValue("udcontractlineid", contractlineid, 11L);
 				toPOLine.setValue("tax1code", tax1code, 11L);
 				toPOLine.setValue("unitcost", uddiscountprice, 11L);
-				System.out.println("\n---918----CCC"+toPOLine.getDouble("unitcost"));
-				System.out.println("\n---918----DDD"+toPOLine.getDouble("orderqty"));
 				toPOLine.setValue("linecost", toPOLine.getDouble("unitcost") * toPOLine.getDouble("orderqty"), 11L);
-				System.out.println("\n---918----EEE");
 				toPOLine.setValue("udtotalprice", uddiscountprice * (1 + percentTaxRate), 11L);
 				toPOLine.setValue("udtotalcost", toPOLine.getDouble("udtotalprice") * toPOLine.getDouble("orderqty"), 11L);
 				toPOLine.setValue("tax1", toPOLine.getDouble("udtotalcost") - toPOLine.getDouble("linecost"), 11L);
@@ -764,6 +761,27 @@ public class UDPO extends PO implements PORemote {
 			if (pozee!=null) {
 				pozee.setValue("udprojectnum", fromPRLine.getString("udprojectnum"), 11L);
 				pozee.setValue("udcapex", fromPRLine.getString("udcapex"), 11L);
+			}
+			/**
+			 * ZEE - poline - udroundfactor,conversion，有询价就代入询价的，没有询价就代入pr的
+			 * DJY
+			 * 774 - 794
+			 * 2024/12/30 14:10
+			 */
+			String zeevenconverStatus = MXServer.getMXServer().getProperty("guide.zeevenconver.enabled");
+			if (zeevenconverStatus != null && zeevenconverStatus.equalsIgnoreCase("ACTIVE")) {
+			String prnum = toPOLine.getString("prnum");
+			String rfqnum = toPOLine.getString("rfqnum");
+			if (!prnum.isEmpty() && !prnum.equalsIgnoreCase("")) {
+				MboSetRemote udconversionSet = fromPRLine.getMboSet("UDCONVERSION");
+				if (!udconversionSet.isEmpty() && udconversionSet.count() > 0) {
+					if (fromPRLine.getString("udprevendor").equalsIgnoreCase(
+							toPOLine.getOwner().getString("vendor"))) {
+						toPOLine.setValue("udroundfactor", udconversionSet.getMbo(0).getDouble("roundfactor"), 11L);
+						toPOLine.setValue("conversion",fromPRLine.getDouble("conversion"), 11L);
+						}
+					}
+				}
 			}
 		}
 		

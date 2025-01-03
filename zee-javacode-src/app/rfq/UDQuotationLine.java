@@ -7,6 +7,7 @@ import psdi.app.rfq.QuotationLineRemote;
 import psdi.mbo.MboRemote;
 import psdi.mbo.MboSet;
 import psdi.mbo.MboSetRemote;
+import psdi.server.MXServer;
 import psdi.util.MXException;
 
 public class UDQuotationLine extends QuotationLine implements QuotationLineRemote {
@@ -72,8 +73,75 @@ public class UDQuotationLine extends QuotationLine implements QuotationLineRemot
                     poline.setValue("udglzee", rfqLineRemote.getString("PRLINE.udglzee"),11L);
                     poline.setValue("udcosttype", rfqLineRemote.getString("PRLINE.udcosttype"),2L);
                     poline.setValue("tax1code", rfqLineRemote.getString("PRLINE.tax1code"),11L);
+                    
+					/**
+					 * ZEE - poline - udroundfactor,conversion，有询价就代入询价的，没有询价就代入pr的
+					 * ZEE - 当从rfq创建po时，授予后自动更新UDITEMCPVEN表
+					 * DJY
+					 * 77 - 135, 141-146
+					 * 2024/12/30 14:10
+					 */
+					String zeevenconverStatus = MXServer.getMXServer().getProperty("guide.zeevenconver.enabled");
+					if (zeevenconverStatus != null && zeevenconverStatus.equalsIgnoreCase("ACTIVE")) {
+						MboSetRemote quotationlineSet = rfqLineRemote.getMboSet("QUOTATIONLINE");
+						if(!quotationlineSet.isEmpty() && quotationlineSet.count() > 0){
+							MboRemote quotationline = quotationlineSet.getMbo(0);
+							poline.setValue("udroundfactor", quotationline.getDouble("udroundfactor"),11L);
+							poline.setValue("conversion", quotationline.getDouble("udconversion"),11L);
+							String itemnum1 = quotationline.getString("itemnum");
+							String orderunit = quotationline.getString("orderunit");
+							Double udroundfactor = quotationline.getDouble("udroundfactor");
+							Double udconversion = quotationline.getDouble("udconversion");
+							String isawarded = quotationline.getString("isawarded");
+							int maxLinenum = 0;
+							MboSetRemote itemSet = MXServer.getMXServer().getMboSet("ITEM", MXServer.getMXServer().getSystemUserInfo());
+							itemSet.setWhere(" itemnum = '"+itemnum1+"' ");
+							itemSet.reset();
+							String issueunit = itemSet.getMbo(0).getString("issueunit");
+							if(isawarded.equalsIgnoreCase("Y")){
+								String vendor = quotationline.getString("vendor");
+								 MboSetRemote uditemcpvenSet = MXServer.getMXServer().getMboSet("UDITEMCPVEN", MXServer.getMXServer().getSystemUserInfo());
+								 uditemcpvenSet.setWhere(" 1=2 ");
+								 MboSetRemote uditemcpvenSet1 = getUditemcpvenSet(itemnum1,vendor);
+									if (uditemcpvenSet1.isEmpty()) {
+										 MboRemote newUditemcpven = uditemcpvenSet.add(11L);
+										 MboSetRemote uditemcpvenSet2 = MXServer.getMXServer().getMboSet("UDITEMCPVEN", MXServer.getMXServer().getSystemUserInfo());
+										 uditemcpvenSet2.setWhere(" itemnum = '"+itemnum1+"' ");
+										 uditemcpvenSet2.reset();
+							            if (!uditemcpvenSet2.isEmpty()) {
+							                maxLinenum = uditemcpvenSet2.getMbo(0).getInt("linenum");
+							                for(int j = 0; j<uditemcpvenSet2.count(); j++) {
+							                    int currentLinenum = uditemcpvenSet2.getMbo(j).getInt("linenum");
+							                    if (currentLinenum > maxLinenum) {
+							                        maxLinenum = currentLinenum;
+							                    }
+							                }
+							            }else{
+							            	maxLinenum = 0;
+							            }
+									 newUditemcpven.setValue("itemnum", itemnum1,2L);
+									 newUditemcpven.setValue("frommeasureunit", orderunit,11L);
+									 newUditemcpven.setValue("tomeasureunit", issueunit,11L);
+									 newUditemcpven.setValue("conversion", udconversion,11L);
+									 newUditemcpven.setValue("roundfactor", udroundfactor,11L);
+									 newUditemcpven.setValue("vendor", vendor,11L);
+									 newUditemcpven.setValue("udcompany", "ZEE",11L);
+									 newUditemcpven.setValue("linenum", maxLinenum+1,11L);
+									 uditemcpvenSet.save();
+									 uditemcpvenSet.close();
+											}
+									}
+							}
+					}
 				}
 			}
 		}
+	}
+	
+	private MboSetRemote getUditemcpvenSet(String itemnum, String uditemcpvendor) throws RemoteException, MXException {
+	    MboSetRemote uditemcpvenSet = MXServer.getMXServer().getMboSet("UDITEMCPVEN", MXServer.getMXServer().getSystemUserInfo());
+	    uditemcpvenSet.setWhere("udcompany = 'ZEE' and itemnum = '" + itemnum + "' and vendor = '" + uditemcpvendor + "'");
+	    uditemcpvenSet.reset();
+	    return uditemcpvenSet;
 	}
 }

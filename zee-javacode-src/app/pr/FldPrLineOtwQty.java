@@ -36,5 +36,6 @@ public class FldPrLineOtwQty extends MboValueAdapter {
 		}
 
 		mbo.setValue("udotwqty", matpr + matpo, 11L);
+		mbo.setValue("udotwqtyiss", (matpr + matpo)*mbo.getDouble("conversion"),11L);//ZEE-在途显示为发放数量
 	}
 }
