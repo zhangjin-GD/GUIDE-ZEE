@@ -61,6 +61,14 @@ public class UDInvUseLine extends InvUseLine implements InvUseLineRemote {
 		if ((owner != null) && (owner instanceof UDInvUse)) {
 			owner.setValue("changeby", getUserInfo().getPersonId(), 11L);
 			owner.setValue("changedate", MXServer.getMXServer().getDate(), 11L);
+            /**
+             * ZEE - 库存转移：目标批次与原始批次在只读情况下，保持一致 64-71
+             * 2025/1/6 11:10
+             */
+            String appType = owner.getString("udapptype");
+            if(owner.getString("udcompany").equalsIgnoreCase("ZEE") &&  "TRANSFERZEE".equalsIgnoreCase(appType)){
+            setValue("tolot", getString("fromlot"), 11L);
+            }
 		}
 	}
 
