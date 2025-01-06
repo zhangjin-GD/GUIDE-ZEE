@@ -86,11 +86,11 @@ public class UDQuotationLine extends QuotationLine implements QuotationLineRemot
 						MboSetRemote quotationlineSet = rfqLineRemote.getMboSet("QUOTATIONLINE");
 						if(!quotationlineSet.isEmpty() && quotationlineSet.count() > 0){
 							MboRemote quotationline = quotationlineSet.getMbo(0);
-							if(String.valueOf(quotationline.getDouble("udroundfactor")) != null){
-                                poline.setValue("udroundfactor", quotationline.getDouble("udroundfactor"),11L);
+                            if(!String.valueOf(quotationline.getDouble("udroundfactor")).equalsIgnoreCase("") && quotationline.getDouble("udroundfactor") != 0.0){
+                            poline.setValue("udroundfactor", quotationline.getDouble("udroundfactor"),11L);
                             }
-                                if(String.valueOf(quotationline.getDouble("udconversion")) != null){
-                                poline.setValue("conversion", quotationline.getDouble("udconversion"),11L);
+                            if(!String.valueOf(quotationline.getDouble("udconversion")).equalsIgnoreCase("") && quotationline.getDouble("udconversion") != 0.0){
+                            poline.setValue("conversion", quotationline.getDouble("udconversion"),11L);
                             }
 							String itemnum1 = quotationline.getString("itemnum");
 							String orderunit = quotationline.getString("orderunit");
