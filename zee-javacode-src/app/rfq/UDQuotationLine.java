@@ -107,7 +107,7 @@ public class UDQuotationLine extends QuotationLine implements QuotationLineRemot
 								 MboSetRemote uditemcpvenSet = MXServer.getMXServer().getMboSet("UDITEMCPVEN", MXServer.getMXServer().getSystemUserInfo());
 								 uditemcpvenSet.setWhere(" 1=2 ");
 								 MboSetRemote uditemcpvenSet1 = getUditemcpvenSet(itemnum1,vendor);
-									if (uditemcpvenSet1.isEmpty()) {
+								 if (uditemcpvenSet1.isEmpty() && !itemSet.getMbo(0).getString("issueunit").equalsIgnoreCase(itemSet.getMbo(0).getString("orderunit"))) {
 										 MboRemote newUditemcpven = uditemcpvenSet.add(11L);
 										 MboSetRemote uditemcpvenSet2 = MXServer.getMXServer().getMboSet("UDITEMCPVEN", MXServer.getMXServer().getSystemUserInfo());
 										 uditemcpvenSet2.setWhere(" itemnum = '"+itemnum1+"' ");

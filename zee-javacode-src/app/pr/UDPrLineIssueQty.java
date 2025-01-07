@@ -24,7 +24,8 @@ public class UDPrLineIssueQty extends MAXTableDomain{
 	public void action() throws MXException, RemoteException {
 		super.action();
 		MboRemote mbo = getMboValue().getMbo(); //PRLINE
-		if (mbo != null){
+		MboRemote owner = mbo.getOwner();
+		if (mbo != null && owner.getString("udcompany").equalsIgnoreCase("ZEE")){
 			String frommeasureunit = "";
 			Double conversion = 1.0;	
 			String itemnum = mbo.getString("itemnum");
@@ -42,6 +43,7 @@ public class UDPrLineIssueQty extends MAXTableDomain{
 				if( frommeasureunit!=null && !frommeasureunit.equalsIgnoreCase("")){
 					if(!roundfactor.equals("") && roundfactor != 0){
 						Double maxlimit = mbo.getDouble("UDITEMCP.maxlimit");//最大库存
+						if(!String.valueOf(maxlimit).equalsIgnoreCase("") && maxlimit!=0){
 						MboSetRemote udinventorySet = MXServer.getMXServer().getMboSet("INVBALANCES", MXServer.getMXServer().getSystemUserInfo());
 						udinventorySet.setWhere(" itemnum = '" + itemnum +"' ");
 						udinventorySet.reset();
@@ -49,30 +51,61 @@ public class UDPrLineIssueQty extends MAXTableDomain{
 						Double udotwqty = (mbo.getMboSet("UDMATPRLINEOTW").sum("orderqty") + mbo.getMboSet("UDMATPOLINEOTW").sum("orderqty"))*conversion;
 						Double initminorderqty = (Math.ceil((maxlimit-(curbaltotal+udotwqty))/conversion / roundfactor))*roundfactor;//初始化计算最小订购数量
 						Double manualUdissueqty = mbo.getDouble("udissueqty"); // 手动修改后的udissueqty
-						Double manualorderqty = manualUdissueqty / conversion;// 手动修改后的orderqty
-							if(initminorderqty > 0){
-								if(manualorderqty < initminorderqty){
-									Object params[] = { " Issue quantity should be more than the minimum issue quantity "+initminorderqty*conversion + " ! "};
-									throw new MXApplicationException("instantmessaging", "tsdimexception",params);
-								}else if(manualorderqty>=0 &&  manualorderqty >=initminorderqty){
-									// 如果在合理范围内，根据roundfactor调整最终的orderqty
-									Double finalmanorderqty = Math.ceil(manualorderqty / roundfactor) * roundfactor;
-									 mbo.setValue("orderqty", finalmanorderqty, 11L);
-								}
+						if((curbaltotal+udotwqty+manualUdissueqty)<=maxlimit){
+							curbaltotal=curbaltotal+manualUdissueqty;
+							Double manualorderqty = (Math.ceil((maxlimit-(curbaltotal+udotwqty))/conversion / roundfactor))*roundfactor;
+							mbo.setValue("orderqty", manualorderqty, 11L);
+						}else if((curbaltotal+udotwqty+manualUdissueqty)>maxlimit){
+							Object params[] = { " Notice: please input <= "+(maxlimit-(curbaltotal+udotwqty))+" , confirm it will not more than the maxlimit "+maxlimit+" ! (If the input limit is minus, which means the maxlimit should be adjusted upper!)"};
+							throw new MXApplicationException("instantmessaging", "tsdimexception",params);
 						}
+					}
 			}else if(roundfactor.equals("") || roundfactor == 0){
-					if(mbo.getDouble("udissueqty") > 0){
-						mbo.setValue("orderqty", mbo.getDouble("udissueqty")/conversion, 11L);
+				Double maxlimit = mbo.getDouble("UDITEMCP.maxlimit");//最大库存
+				if(!String.valueOf(maxlimit).equalsIgnoreCase("") && maxlimit!=0){
+				Double udotwqty = (mbo.getMboSet("UDMATPRLINEOTW").sum("orderqty") + mbo.getMboSet("UDMATPOLINEOTW").sum("orderqty"))*conversion;
+				MboSetRemote udinventorySet = MXServer.getMXServer().getMboSet("INVBALANCES", MXServer.getMXServer().getSystemUserInfo());
+				udinventorySet.setWhere(" itemnum = '" + itemnum +"' ");
+				udinventorySet.reset();
+				Double curbaltotal = udinventorySet.sum("curbal");
+					if(mbo.getDouble("udissueqty") > 0 && !String.valueOf(maxlimit).equalsIgnoreCase("") && maxlimit!=0){
+						if((curbaltotal+udotwqty+mbo.getDouble("udissueqty"))<=maxlimit){
+							curbaltotal=curbaltotal+mbo.getDouble("udissueqty");
+						mbo.setValue("orderqty", (maxlimit-(curbaltotal+udotwqty))/conversion, 11L);
+						}else if((curbaltotal+udotwqty+mbo.getDouble("udissueqty"))>maxlimit){
+							Object params[] = { " Notice: please input <= "+(maxlimit-(curbaltotal+udotwqty))+" , confirm it will not more than the maxlimit "+maxlimit+" ! (If the input limit is minus, which means the maxlimit should be adjusted upper!) "};
+							throw new MXApplicationException("instantmessaging", "tsdimexception",params);
+						}
+					}
 				}
 			}
 		}
 	}else if(udconversionSet.isEmpty() || udconversionSet.count() == 0){
 				if(mbo.getDouble("udissueqty") >= 0){
-				mbo.setValue("orderqty", mbo.getDouble("udissueqty")/mbo.getDouble("conversion"), 2L);
+					Double maxlimit = mbo.getDouble("UDITEMCP.maxlimit");//最大库存
+					if(!String.valueOf(maxlimit).equalsIgnoreCase("") && maxlimit!=0){
+					Double udotwqty = (mbo.getMboSet("UDMATPRLINEOTW").sum("orderqty") + mbo.getMboSet("UDMATPOLINEOTW").sum("orderqty"))*mbo.getDouble("conversion");
+					MboSetRemote udinventorySet = MXServer.getMXServer().getMboSet("INVBALANCES", MXServer.getMXServer().getSystemUserInfo());
+					udinventorySet.setWhere(" itemnum = '" + itemnum +"' ");
+					udinventorySet.reset();
+					Double curbaltotal = udinventorySet.sum("curbal");
+						if(mbo.getDouble("udissueqty") > 0 && !String.valueOf(maxlimit).equalsIgnoreCase("") && maxlimit!=0){
+							if((curbaltotal+udotwqty+mbo.getDouble("udissueqty"))<=maxlimit){
+								curbaltotal=curbaltotal+mbo.getDouble("udissueqty");
+							mbo.setValue("orderqty", (maxlimit-(curbaltotal+udotwqty))/mbo.getDouble("conversion"), 11L);
+							}else if((curbaltotal+udotwqty+mbo.getDouble("udissueqty"))>maxlimit){
+								Object params[] = { " Notice: please input <= "+(maxlimit-(curbaltotal+udotwqty))+" , confirm it will not more than the maxlimit "+maxlimit+" ! (If the input limit is minus, which means the maxlimit should be adjusted upper!) "};
+								throw new MXApplicationException("instantmessaging", "tsdimexception",params);
+							}
+						}
+					}
 				}else if(mbo.getDouble("udissueqty") < 0){
 					Object params[] = { " Issue quantity cannot be less than 0 !  "};
 					throw new MXApplicationException("instantmessaging", "tsdimexception",params);
 				}
+			}
+			if(mbo.getDouble("udissueqty") >= 0 && String.valueOf(mbo.getDouble("UDITEMCP.maxlimit")).equalsIgnoreCase("") || mbo.getDouble("UDITEMCP.maxlimit")==0){
+				mbo.setValue("orderqty", mbo.getDouble("udissueqty")/mbo.getDouble("conversion"), 11L);
 			}
 		}
 	}

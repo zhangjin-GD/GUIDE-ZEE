@@ -215,6 +215,7 @@ public class UDFldPurItemNum extends FldPurItemNum {
 									if( frommeasureunit!=null && !frommeasureunit.equalsIgnoreCase("")){
 										if(!roundfactor.equals("") && roundfactor != 0){
 											Double maxlimit = mbo.getDouble("UDITEMCP.maxlimit");
+											if(!String.valueOf(maxlimit).equalsIgnoreCase("") && maxlimit!=0){
 //											Double curbaltotal = mbo.getDouble("INVENTORY.curbaltotal");
 //											Double curbaltotal = mbo.getDouble("udcurbaltotal");//当前余量
 //											Double curbaltotal = mbo.getMboSet("UDINVENTORY").sum("curbaltotal");
@@ -230,9 +231,13 @@ public class UDFldPurItemNum extends FldPurItemNum {
 											Double orderqty = (maxlimit-(curbaltotal+udotwqty))/conversion;
 											Double resultup =  (Math.ceil(orderqty / roundfactor))*roundfactor;//最小订购数量
 											if(resultup>0){
-											mbo.setValue("orderqty", resultup,11L);	
-											//1209
-											mbo.setValue("udissueqty", resultup*conversion,11L);//最小发放数量
+												mbo.setValue("orderqty", resultup,11L);	
+												//1209
+												mbo.setValue("udissueqty", resultup*conversion,11L);//最小发放数量
+											}
+											}else if(String.valueOf(maxlimit).equalsIgnoreCase("") || maxlimit==0){
+												mbo.setValue("orderqty", "1",11L);
+												mbo.setValue("udissueqty", 1*conversion,11L);
 											}
 										}
 										mbo.setValue("orderunit", frommeasureunit,2L);

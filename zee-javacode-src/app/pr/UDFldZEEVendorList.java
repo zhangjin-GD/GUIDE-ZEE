@@ -79,6 +79,7 @@ public class UDFldZEEVendorList  extends MAXTableDomain{
 					if( frommeasureunit!=null && !frommeasureunit.equalsIgnoreCase("")){
 						if(!roundfactor.equals("") && roundfactor != 0){
 							Double maxlimit = mbo.getDouble("UDITEMCP.maxlimit");
+							if(!String.valueOf(maxlimit).equalsIgnoreCase("") && maxlimit!=0){
 							MboSetRemote udinventorySet = MXServer.getMXServer().getMboSet("INVBALANCES", MXServer.getMXServer().getSystemUserInfo());
 							udinventorySet.setWhere(" itemnum = '" + itemnum +"' ");
 							udinventorySet.reset();
@@ -90,7 +91,11 @@ public class UDFldZEEVendorList  extends MAXTableDomain{
 							mbo.setValue("orderqty", resultup,11L);	
 							//1209
 							mbo.setValue("udissueqty", resultup*conversion,11L);//最小发放数量
-							}
+						}
+							}else if(String.valueOf(maxlimit).equalsIgnoreCase("") || maxlimit==0){
+								mbo.setValue("orderqty", "1",11L);
+								mbo.setValue("udissueqty", 1*conversion,11L);
+							}	
 						}
 						mbo.setValue("orderunit", frommeasureunit,2L);
 						mbo.setValue("conversion", conversion,2L);

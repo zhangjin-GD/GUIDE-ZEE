@@ -151,7 +151,7 @@ public class UDFldUdItemcpVen extends Mbo implements MboRemote {
 	    if (roundfactor != null && roundfactor != 0) {
 	        conversionMbo.setValue("roundfactor", roundfactor, 11L);
 	    } else {
-	        conversionMbo.setValue("roundfactor", 1.0, 11L);
+	    	conversionMbo.setValue("roundfactor", "", 11L);
 	    }
 	    conversionMbo.setValue("udvendoritemnum",  getString("udvendoritemnum"), 11L);
 	    conversionMbo.setValue("udvendoritemdesc",  getString("udvendoritemdesc"), 11L);
@@ -173,7 +173,7 @@ public class UDFldUdItemcpVen extends Mbo implements MboRemote {
 	    if (roundfactor != null && roundfactor != 0) {
 	        conversionMbo.setValue("roundfactor", roundfactor, 11L);
 	    } else {
-	        conversionMbo.setValue("roundfactor", 1.0, 11L);
+	    	conversionMbo.setValue("roundfactor", "", 11L);
 	    }
 	    conversionMbo.setValue("udvendoritemnum",  uditemcpvenMbo.getString("udvendoritemnum"), 11L);
 	    conversionMbo.setValue("udvendoritemdesc",  uditemcpvenMbo.getString("udvendoritemdesc"), 11L);

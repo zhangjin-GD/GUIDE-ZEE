@@ -24,14 +24,16 @@ public class UDFldQuotalineRdfactor extends MAXTableDomain{
 		String zeevenconverStatus = MXServer.getMXServer().getProperty("guide.zeevenconver.enabled");
 		if (zeevenconverStatus != null && zeevenconverStatus.equalsIgnoreCase("ACTIVE")) {
 		MboRemote mbo = getMboValue().getMbo(); //RFQLINE
-		if (mbo != null){
+		MboSetRemote rfq = mbo.getMboSet("RFQ");
+		if (mbo != null && rfq.getMbo(0).getString("udcompany").equalsIgnoreCase("ZEE") && mbo.getString("udcalculate").equalsIgnoreCase("Y")){
 			String itemnum = mbo.getString("itemnum");
 			Double udconversion = mbo.getDouble("udconversion");
 			Double udissueqty = mbo.getDouble("udissueqty");
 			MboSetRemote uditemcpSet = MXServer.getMXServer().getMboSet("UDITEMCP", MXServer.getMXServer().getSystemUserInfo());
 			uditemcpSet.setWhere(" itemnum = '" + itemnum +"' ");
 			uditemcpSet.reset();
-				Double maxlimit = uditemcpSet.getMbo(0).getDouble("maxlimit");
+		Double maxlimit = uditemcpSet.getMbo(0).getDouble("maxlimit");
+		if(!String.valueOf(maxlimit).equalsIgnoreCase("") && maxlimit!=0){
 			MboSetRemote udinventorySet = MXServer.getMXServer().getMboSet("INVBALANCES", MXServer.getMXServer().getSystemUserInfo());
 			udinventorySet.setWhere(" itemnum = '" + itemnum +"' ");
 			udinventorySet.reset();
@@ -49,13 +51,9 @@ public class UDFldQuotalineRdfactor extends MAXTableDomain{
 				if((!String.valueOf(mbo.getDouble("udroundfactor")).equals("") && mbo.getDouble("udroundfactor")!=0) && (!String.valueOf(udconversion).equals("") && udconversion != 0)){
 					Double manualUdroundfactor = mbo.getDouble("udroundfactor"); // 手动修改后的udroundfactor
 					Double manualminorderqty = (Math.ceil((maxlimit-(curbaltotal+udotwqty))/udconversion/ manualUdroundfactor))*manualUdroundfactor;
-					Double manualminissueqty = ((Math.ceil((maxlimit-(curbaltotal+udotwqty))/udconversion / manualUdroundfactor))*manualUdroundfactor)*udconversion;
-					if(manualminorderqty > 0 && manualminissueqty > 0){
+					if((curbaltotal+udotwqty)<=maxlimit){
 						 mbo.setValue("orderqty", manualminorderqty, 11L);
-						 mbo.setValue("udissueqty", manualminissueqty, 11L);
-					}else if (manualminorderqty < 0 || manualminissueqty < 0){
-						Object params[] = { " Please increase the maxlimit to confirm the minimum order quantity more than 0 !  "};
-						throw new MXApplicationException("instantmessaging", "tsdimexception",params);
+						} 
 					}
 				}
 			}

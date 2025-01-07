@@ -113,9 +113,9 @@ public class Contract extends UDMbo implements MboRemote {
 												String udconversion = udcontractlineSet1.getMbo(0).getString("udconversion");
 												String udroundfactor = udcontractlineSet1.getMbo(0).getString("udroundfactor");
 												if(!orderunit.equalsIgnoreCase("") && !udconversion.equalsIgnoreCase("") &&  !udroundfactor.equalsIgnoreCase("") ){
-												System.out.println("25-1-2--orderunit-"+orderunit);
 												 MboSetRemote uditemcpvenSet = MXServer.getMXServer().getMboSet("UDITEMCPVEN", MXServer.getMXServer().getSystemUserInfo());
 												 uditemcpvenSet.setWhere(" 1=2 ");
+												 if(!itemSet.getMbo(0).getString("issueunit").equalsIgnoreCase(itemSet.getMbo(0).getString("orderunit"))){
 												 MboRemote newUditemcpven = uditemcpvenSet.add(11L);
 												 newUditemcpven.setValue("itemnum", itemnum,2L);
 												 newUditemcpven.setValue("frommeasureunit", orderunit,11L);
@@ -126,7 +126,8 @@ public class Contract extends UDMbo implements MboRemote {
 												 newUditemcpven.setValue("udcompany", "ZEE",11L);
 												 newUditemcpven.setValue("linenum", maxLinenum+1,11L);
 												 uditemcpvenSet.save();
-													uditemcpvenSet.close();
+												 }
+												uditemcpvenSet.close();
 														}
 													} 
 										}	

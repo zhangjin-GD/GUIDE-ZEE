@@ -36,5 +36,6 @@ public class FldPrImpLineOtwQty extends MboValueAdapter {
 		}
 
 		mbo.setValue("otwqty", matpr + matpo, 11L);
+		mbo.setValue("udotwqtyiss", (matpr + matpo) * mbo.getDouble("conversion"), 11L);
 	}
 }

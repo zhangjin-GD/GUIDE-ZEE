@@ -81,6 +81,9 @@ public class UDRFQLine extends RFQLine implements RFQLineRemote {
 		quotationLine.setValue("manufacturer", this.getString("manufacturer"), 11L);
 		quotationLine.setValue("modelnum", this.getString("modelnum"), 11L);
 		quotationLine.setValue("orderqty", this.getString("orderqty"), 11L);
+		//ZEE-将PRLINE的issueqty赋值给quotationline 2025-01-07 17:16:48
+		quotationLine.setValue("udissueqty", this.getString("PRLINE.udissueqty"), 11L);
+		
 		quotationLine.setValue("orderunit", this.getString("quotationorderunit"), 11L);
 		quotationLine.setValue("commodity", this.getString("commodity"), 11L);
 		quotationLine.setValue("commoditygroup", this.getString("commoditygroup"), 11L);
