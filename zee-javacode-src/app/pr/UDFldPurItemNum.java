@@ -220,7 +220,7 @@ public class UDFldPurItemNum extends FldPurItemNum {
 //											Double curbaltotal = mbo.getDouble("udcurbaltotal");//当前余量
 //											Double curbaltotal = mbo.getMboSet("UDINVENTORY").sum("curbaltotal");
 											MboSetRemote udinventorySet = MXServer.getMXServer().getMboSet("INVBALANCES", MXServer.getMXServer().getSystemUserInfo());
-											udinventorySet.setWhere(" itemnum = '" + itemnum +"' ");
+											udinventorySet.setWhere(" itemnum = '" + itemnum +"' and location in ( 'ZEE-01') ");
 											udinventorySet.reset();
 											Double curbaltotal = udinventorySet.sum("curbal");
 											System.out.println("1213--2-curbaltotal-"+curbaltotal);

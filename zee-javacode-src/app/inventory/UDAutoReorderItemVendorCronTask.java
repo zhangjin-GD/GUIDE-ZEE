@@ -136,7 +136,7 @@ public class UDAutoReorderItemVendorCronTask extends SimpleCronTask {
 					+"  left join udconversion on  udconversion.tomeasureunit=item.issueunit and uditemcp.itemnum = udconversion.itemnum and udconversion.vendor in (select vendor from uditemcpven where uditemcpven.itemnum = uditemcp.itemnum and uditemcpven.udactive='1') "
 					+"  left join  (select itemnum,sum(invbalances.curbal) curbal from locations "
 					+"  left join invbalances on invbalances.location=locations.location " + " where "+sqlWhere
-					+"  and invbalances.curbal>0  "
+					+"  and invbalances.curbal>0   "
 					+"  group by invbalances.itemnum ) invb on uditemcp.itemnum=invb.itemnum"
 					+"  left join "
 					+"  (select prline.itemnum,sum(prline.orderqty * nvl(udconversion.conversion,1)) prqty from pr "

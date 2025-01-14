@@ -84,5 +84,17 @@ public class FldBudgetPurCost extends MboValueAdapter {
 		mbo.setValue("purcompcost", purCompcost, 11L);// 接收完成
 		mbo.setValue("puringcost", purIngcost + purCompcost, 11L);// 采购已用
 		mbo.setValue("purrecost", mbo.getDouble("budgetcost") - purIngcost - purCompcost, 11L);// 采购剩余
+		
+		/**
+		 * ZEE - 物资创建固定资产释放PO预算
+		 * 89-99
+		 * 2025-1-14-18:00
+		 */
+		if(mbo.getString("udcompany").equalsIgnoreCase("ZEE")){
+		Double releasepolinebudget = mbo.getMboSet("UDMATFIXBUDGET").sum("linecost");
+		mbo.setValue("purcompcost", mbo.getDouble("purcompcost")-releasepolinebudget,11L);//释放接收完成
+		mbo.setValue("puringcost", mbo.getDouble("puringcost")+mbo.getDouble("purcompcost"), 11L);// 重新计算采购占用=在途采购+接收完成
+		mbo.setValue("purrecost", mbo.getDouble("budgetcost") - mbo.getDouble("puringcost") - mbo.getDouble("purcompcost"), 11L);// 重新计算采购剩余
+		}
 	}
 }

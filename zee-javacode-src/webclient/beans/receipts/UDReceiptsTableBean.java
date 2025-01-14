@@ -13,6 +13,9 @@ import org.json.JSONObject;
 
 import guide.app.common.ComExecute;
 import guide.app.common.CommonUtil;
+import guide.app.fixed.FixEd;
+import guide.app.fixed.FixEdSet;
+import guide.app.inventory.UDMatRecTrans;
 import psdi.mbo.MboRemote;
 import psdi.mbo.MboSetRemote;
 import psdi.server.MXServer;
@@ -23,7 +26,9 @@ import psdi.webclient.system.beans.DataBean;
 import psdi.webclient.system.controller.WebClientEvent;
 
 import java.util.regex.Pattern;
+
 import org.json.JSONArray;
+
 import java.util.Date;
 import java.util.regex.Matcher;
 
@@ -326,7 +331,7 @@ public class UDReceiptsTableBean extends ReceiptsTableBean {
 	 * 31-117
 	 * 2024-07-22 9:39:13
 	 */	
-public synchronized int execute() throws MXException, RemoteException {
+public int UDZEEPRINT() throws MXException, RemoteException {
 	MboRemote mbo = this.app.getAppBean().getMbo();
 	String udcompany = mbo.getString("udcompany");
 	if (udcompany != null && udcompany.equalsIgnoreCase("ZEE")) {
@@ -410,4 +415,5 @@ public synchronized int execute() throws MXException, RemoteException {
 		}
 		return null;
 	}
+	
 }
