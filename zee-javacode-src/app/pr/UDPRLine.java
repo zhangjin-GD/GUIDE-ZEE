@@ -45,20 +45,20 @@ public class UDPRLine extends PRLine implements PRLineRemote {
 			 * DJY
 			 */
 			if(owner!=null && owner instanceof UDPR && owner.getString("udcompany").equalsIgnoreCase("ZEE")){
-				MboSetRemote udbudgetzeeSet = getMboSet("UDBUDGETZEE");
-				if(!udbudgetzeeSet.isEmpty() && udbudgetzeeSet.count()>0){
-						MboRemote udbudgetzee = udbudgetzeeSet.getMbo(0);
-						MboSetRemote pringcostSet = MXServer.getMXServer().getMboSet("PRLINE", MXServer.getMXServer().getSystemUserInfo());
-						String prnum = getString("prnum");
-						String udbudgetnum =getString("udbudgetnum");
-						pringcostSet.setWhere("prnum = '"+prnum+"' and udbudgetnum='"+udbudgetnum+"' ");
-						pringcostSet.reset();
+				/**
+				 * ZEE - PR预算list，可见当前单据的所用预算总额（不含税）
+				 * 2025-1-22  10:17
+				 */
+				String prnum = getString("prnum");
+				String udbudgetnum =getString("udbudgetnum");
+				if(!udbudgetnum.isEmpty() && !udbudgetnum.equalsIgnoreCase("")){
+					MboSetRemote pringcostSet = MXServer.getMXServer().getMboSet("PRLINE", MXServer.getMXServer().getSystemUserInfo());
+					pringcostSet.setWhere(" prnum = '"+prnum+"' and udbudgetnum='"+udbudgetnum+"'");
+					pringcostSet.reset();
 						if(!pringcostSet.isEmpty() && pringcostSet.count() > 0){
-							udbudgetzee.setValue("udthisprbudget", pringcostSet.sum("linecost"), 11L);
-						}
-						pringcostSet.close();						
+							setValue("udthisprbudget", pringcostSet.sum("linecost"), 11L);
+					}
 				}
-				
 				//ZEE - 完善系统中采购的order unit, conversion逻辑:PRLINE改变推荐供应商的值，也会代入该供应商在UDCONVERSION表的订购单位、转换系数 80-107
 				String frommeasureunit = "";
 				String itemnum = getString("itemnum");
@@ -86,6 +86,23 @@ public class UDPRLine extends PRLine implements PRLineRemote {
 				}
 				udconversionSet.close();
 				itemSet.close();
+				/** 
+				 * ZEE - 采购申请capex&project-code
+				 * 2025-1-21  16:17  
+				 * 104-120
+				 */
+				String udcapex = getString("udcapex");
+				String udcosttype = getString("udcosttype").replaceAll("\\s", ""); // 去除所有空格
+				if(udcapex.equalsIgnoreCase("Y") && isNumeric(udcosttype) &&  Long.parseLong(udcosttype) < 4000){
+					setFieldFlag("udprojectnum", 128L, false); // 设置非必填
+					setFieldFlag("udprojectnum", 7L, true); // 设置只读
+				}else if(udcapex.equalsIgnoreCase("Y") && isNumeric(udcosttype) && Long.parseLong(udcosttype) >= 4000){
+					setFieldFlag("udprojectnum", 7L, false); // 取消只读
+					setFieldFlag("udprojectnum", 128L, true); // 设置必填
+				}else if(udcapex.equalsIgnoreCase("N")){
+					setFieldFlag("udprojectnum", 7L, false); // 取消只读
+					setFieldFlag("udprojectnum", 128L, false); // 取消必填
+				}
 			}
 		} catch (RemoteException e) {
 			e.printStackTrace();
@@ -245,4 +262,19 @@ public class UDPRLine extends PRLine implements PRLineRemote {
 		  }
 	  }
 	
+	    /**
+	     * 检查字符串是否为数字
+	     */
+	    private boolean isNumeric(String str) {
+	        if (str == null || str.isEmpty()) {
+	            return false;
+	        }
+	        try {
+	            Long.parseLong(str);
+	            return true;
+	        } catch (NumberFormatException e) {
+	            return false;
+	        }
+	    }
+	    
 }

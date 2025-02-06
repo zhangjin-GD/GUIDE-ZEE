@@ -81,7 +81,7 @@ public class UDFldZEEVendorList  extends MAXTableDomain{
 							Double maxlimit = mbo.getDouble("UDITEMCP.maxlimit");
 							if(!String.valueOf(maxlimit).equalsIgnoreCase("") && maxlimit!=0){
 							MboSetRemote udinventorySet = MXServer.getMXServer().getMboSet("INVBALANCES", MXServer.getMXServer().getSystemUserInfo());
-							udinventorySet.setWhere(" itemnum = '" + itemnum +"' and location in ( 'ZEE-01') ");
+							udinventorySet.setWhere(" itemnum = '" + itemnum +"' ");
 							udinventorySet.reset();
 							Double curbaltotal = udinventorySet.sum("curbal");
 							Double udotwqty = (mbo.getMboSet("UDMATPRLINEOTW").sum("orderqty") + mbo.getMboSet("UDMATPOLINEOTW").sum("orderqty"))*conversion;

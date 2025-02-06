@@ -113,6 +113,15 @@ public class UDFldMatRecTransItemNum extends FldMatRecTransItemNum {
 					mbo.setValue("udstoreroom", "",2L);
 					mbo.setValue("udbinlocation", "",2L);
 				}
+				/** 
+				 * ZEE - 采购申请capex&project-code
+				 * 2025-1-24  15:17  
+				 * 116-124
+				 */
+				String udcapex = poline.getString("udcapex");
+				String udprojectnum = poline.getString("udprojectnum");
+				mbo.setValue("udcapex", udcapex,2L);	
+				mbo.setValue("udprojectnum", udprojectnum,11L);	
 			}
 				polineSet.close();
 			

@@ -46,18 +46,18 @@ public class FldPOLineOrderQty extends FldPurOrderQty {
 			mbo.setValue("udpredicttaxprice", totalprice, 2L);
 		}
 		
-		/**
-		 * ZEE - 如果 增大/减小订购数量，订购数量应该永远是round factor的倍数
-		 * 2025-1-13  9:17  
-		 * 79-89
-		 */
-		MboRemote owner = mbo.getOwner();
-		String udcompany = owner.getString("udcompany");
-		if(udcompany.equalsIgnoreCase("ZEE")){
-			Double udroundfactor = mbo.getDouble("udroundfactor");
-			if(!String.valueOf(udroundfactor).equals("") && udroundfactor != 0){
-				mbo.setValue("orderqty", (Math.ceil(mbo.getDouble("orderqty")/ udroundfactor))*udroundfactor, 11L);
-			}
-		}
+//		/**
+//		 * ZEE - 如果 增大/减小订购数量，订购数量应该永远是round factor的倍数
+//		 * 2025-1-13  9:17  
+//		 * 79-89
+//		 */
+//		MboRemote owner = mbo.getOwner();
+//		String udcompany = owner.getString("udcompany");
+//		if(udcompany.equalsIgnoreCase("ZEE")){
+//			Double udroundfactor = mbo.getDouble("udroundfactor");
+//			if(!String.valueOf(udroundfactor).equals("") && udroundfactor != 0){
+//				mbo.setValue("orderqty", (Math.ceil(mbo.getDouble("orderqty")/ udroundfactor))*udroundfactor, 11L);
+//			}
+//		}
 	}
 }

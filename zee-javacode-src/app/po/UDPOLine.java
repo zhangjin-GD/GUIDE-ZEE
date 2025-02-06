@@ -76,24 +76,32 @@ public class UDPOLine extends POLine implements POLineRemote {
 						setFieldFlag(attrsreadonly, 7L, false);
 					}
 					
-					/**
-					 * ZEE - PO预算list，可见当前单据的所用预算总额（不含税）
-					 * 2024-9-29  16:17
-					 * 109 - 128
-					 * 
-					 */
-					MboSetRemote udbudgetzeeSet = getMboSet("UDBUDGETZEE");
-					if (!udbudgetzeeSet.isEmpty() && udbudgetzeeSet.count() > 0) {
-						MboRemote udbudgetzee = udbudgetzeeSet.getMbo(0);
+					String ponum = getString("ponum");
+					String udbudgetnum =getString("udbudgetnum");
+					if(!udbudgetnum.isEmpty() && !udbudgetnum.equalsIgnoreCase("")){
 						MboSetRemote pringcostSet = MXServer.getMXServer().getMboSet("POLINE", MXServer.getMXServer().getSystemUserInfo());
-						String ponum = getString("ponum");
-						String udbudgetnum = getString("udbudgetnum");
-						pringcostSet.setWhere("ponum = '" + ponum+ "' and udbudgetnum='" + udbudgetnum + "' ");
+						pringcostSet.setWhere(" ponum = '"+ponum+"' and udbudgetnum='"+udbudgetnum+"'");
 						pringcostSet.reset();
-						if (!pringcostSet.isEmpty() && pringcostSet.count() > 0) {
-							udbudgetzee.setValue("udthispobudget",pringcostSet.sum("linecost"), 11L);
+							if(!pringcostSet.isEmpty() && pringcostSet.count() > 0){
+								setValue("udthispobudget", pringcostSet.sum("linecost"), 11L);
 						}
-						pringcostSet.close();
+					}
+					/** 
+					 * ZEE - 采购申请capex&project-code
+					 * 2025-2-6  16:17  
+					 * 108-124
+					 */
+					String udcapex = getString("udcapex");
+					String udcosttype = getString("udcosttype").replaceAll("\\s", ""); // 去除所有空格
+					if(udcapex.equalsIgnoreCase("Y") && isNumeric(udcosttype) &&  Long.parseLong(udcosttype) < 4000){
+						setFieldFlag("udprojectnum", 128L, false); // 设置非必填
+						setFieldFlag("udprojectnum", 7L, true); // 设置只读
+					}else if(udcapex.equalsIgnoreCase("Y") && isNumeric(udcosttype) && Long.parseLong(udcosttype) >= 4000){
+						setFieldFlag("udprojectnum", 7L, false); // 取消只读
+						setFieldFlag("udprojectnum", 128L, true); // 设置必填
+					}else if(udcapex.equalsIgnoreCase("N")){
+						setFieldFlag("udprojectnum", 7L, false); // 取消只读
+						setFieldFlag("udprojectnum", 128L, false); // 取消必填
 					}
 				}
 			}
@@ -180,5 +188,43 @@ public class UDPOLine extends POLine implements POLineRemote {
 		super.modify();
 		setValue("changeby", getUserInfo().getPersonId(), 11L);
 		setValue("changedate", MXServer.getMXServer().getDate(), 11L);
+		/** 185-207
+		 * ZEE - 如果 增大/减小订购数量，订购数量应该永远是round factor的倍数，且给出错误弹框
+		 * 2025-1-13  9:17  
+		 * 
+		 */
+		MboRemote owner = getOwner();
+		if (owner!=null && owner instanceof UDPO) {
+			String udcompany = owner.getString("udcompany");
+			if (udcompany.equalsIgnoreCase("ZEE") && isModified("orderqty")) {
+			    Double udroundfactor =getDouble("udroundfactor");
+			    double oldOrderQty = getDouble("orderqty");
+			    if (!String.valueOf(udroundfactor).equals("") && udroundfactor != 0) {
+			        double newOrderQty = (Math.ceil(getDouble("orderqty") / udroundfactor)) * udroundfactor;		        
+		        // 先执行赋值操作
+			        setValue("orderqty", newOrderQty, 11L);
+			        // 然后进行条件检查
+			        if (oldOrderQty != newOrderQty) {
+			            String flag = " Be careful, the order quantity is not a multiple of round factor! ";
+			    		(getThisMboSet()).addWarning(new MXApplicationException("Tip", flag));
+			        }
+			    }
+			}
+		}
 	}
+	
+    /**
+     * 检查字符串是否为数字
+     */
+    private boolean isNumeric(String str) {
+        if (str == null || str.isEmpty()) {
+            return false;
+        }
+        try {
+            Long.parseLong(str);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
 }

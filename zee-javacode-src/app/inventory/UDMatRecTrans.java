@@ -55,6 +55,25 @@ public class UDMatRecTrans extends MatRecTrans implements MatRecTransRemote {
 					this.setValue("udstoreroom", "", 2L);
 					this.setValue("udbinlocation", "", 2L);
 				}
+				/** 
+				 * ZEE - 采购申请capex&project-code
+				 * 2025-1-24  13:17  
+				 * 58-76
+				 */
+				String udcapex = getString("udcapex");
+				if (udcapex.equalsIgnoreCase("N")) {
+					setValue("udprojectnum", "", 11L);
+					setFieldFlag("udprojectnum", 7L, false); // 取消只读
+					setFieldFlag("udprojectnum", 128L, false); // 取消必填
+				}else if(udcapex.equalsIgnoreCase("Y") && isNumeric(udcosttype) &&  Long.parseLong(udcosttype) < 4000){
+					setValue("udprojectnum", "", 11L);
+					setFieldFlag("udprojectnum", 128L, false); // 设置非必填
+					setFieldFlag("udprojectnum", 7L, true); // 设置只读
+				}else if(udcapex.equalsIgnoreCase("Y") && isNumeric(udcosttype) && Long.parseLong(udcosttype) >= 4000){
+					setFieldFlag("udprojectnum", 7L, false); // 取消只读
+					setFieldFlag("udprojectnum", 128L, true); // 设置必填
+					setValue("issue", "Y", 2L);
+				}
 			}
 			polineSet.close();
 		} catch (Exception e) {
@@ -160,4 +179,18 @@ public class UDMatRecTrans extends MatRecTrans implements MatRecTransRemote {
 		
 	}
 	
+    /**
+     * 检查字符串是否为数字
+     */
+    private boolean isNumeric(String str) {
+        if (str == null || str.isEmpty()) {
+            return false;
+        }
+        try {
+            Long.parseLong(str);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
 }
