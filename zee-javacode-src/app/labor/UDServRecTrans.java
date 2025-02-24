@@ -35,7 +35,6 @@ public class UDServRecTrans extends ServRecTrans implements ServRecTransRemote{
 				String udcosttype = poline.getString("udcosttype").replaceAll("\\s", ""); // 去除所有空格
 				String udcapex = getString("udcapex");
 				if (udcapex.equalsIgnoreCase("N")) {
-					setValue("udprojectnum", "", 11L);
 					setFieldFlag("udprojectnum", 7L, false); // 取消只读
 					setFieldFlag("udprojectnum", 128L, false); // 取消必填
 				}else if(udcapex.equalsIgnoreCase("Y") && isNumeric(udcosttype) && Long.parseLong(udcosttype) >= 4000){

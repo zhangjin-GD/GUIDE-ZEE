@@ -96,6 +96,38 @@ public class UDFldMatuseItemnum extends FldMatUseTransItemNum {
 						mbo.setValue("udzeemovementtype", "", 11L);
 					}
 				}
+				//ZEE - 选择物资后自动带出costcenter（默认值：如果设备存在，则取设备的成本中心，如果设备不存在则取部门的成本中心）107-138
+				String assetnum = mbo.getString("assetnum");
+				if(!itemnum.equalsIgnoreCase("") && itemnum != null){
+						MboSetRemote assetSet = MXServer.getMXServer().getMboSet("ASSET", MXServer.getMXServer().getSystemUserInfo());
+						assetSet.setWhere(" assetnum =  '"+assetnum+"' and udcompany = 'ZEE' ");
+						assetSet.reset();
+						if(!assetSet.isEmpty() && assetSet.count() > 0){
+							MboRemote udasset = assetSet.getMbo(0);
+							String udcostcenter = udasset.getString("udcostcenter");
+							if(!udcostcenter.equalsIgnoreCase("")){
+								mbo.setValue("udcostcenterasset", udcostcenter, 11L);
+							}
+						}
+						String enterby = mbo.getString("enterby");
+						MboSetRemote personSet = MXServer.getMXServer().getMboSet("PERSON", MXServer.getMXServer().getSystemUserInfo());
+						personSet.setWhere(" personid ='"+enterby+"' ");
+						personSet.reset();
+						if(!personSet.isEmpty() && personSet.count() > 0){
+							MboRemote person = personSet.getMbo(0);
+							String uddept = person.getString("uddept");
+							MboSetRemote uddeptSet = MXServer.getMXServer().getMboSet("UDDEPT", MXServer.getMXServer().getSystemUserInfo());
+							uddeptSet.setWhere(" deptnum ='"+uddept+"' ");
+							uddeptSet.reset();
+							if(!uddeptSet.isEmpty() && uddeptSet.count() > 0){
+								MboRemote dept = uddeptSet.getMbo(0);
+								String costcenter = dept.getString("costcenter");
+								if(!costcenter.equalsIgnoreCase("")){
+									mbo.setValue("udcostcenterzee", costcenter, 11L);
+								}
+							}
+						}
+				}
 			}
 		}
 	}

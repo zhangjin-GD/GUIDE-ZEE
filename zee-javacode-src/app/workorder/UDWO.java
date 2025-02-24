@@ -182,6 +182,27 @@ public class UDWO extends WO implements WORemote {
 //				}
 //			}
 			
+			/** 
+			 * ZEE - 工单capex&project-code
+			 * 2025-2-18  11:17  
+			 * 184-203
+			 */
+		    String appname = getThisMboSet().getApp();
+			if (appname == null) {
+				return;
+			}
+		    if (appname!=null && appname.equalsIgnoreCase("UDWOZEE")) {
+				if(getString("udcompany").equalsIgnoreCase("ZEE")){
+					String udcapex = getString("udcapex");
+					if (udcapex.equalsIgnoreCase("N")) {
+						setValue("udprojectnum", "", 11L);
+						setFieldFlag("udprojectnum", 128L, false); // 取消必填
+					}else if(udcapex.equalsIgnoreCase("Y") ){
+						setFieldFlag("udprojectnum", 128L, true); // 设置必填
+					}
+				}
+		     }
+			
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}

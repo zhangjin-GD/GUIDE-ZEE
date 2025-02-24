@@ -30,8 +30,10 @@ public class UDFldZEEVendorList  extends MAXTableDomain{
 		MboRemote owner = mbo.getOwner();
 		String appName = owner.getThisMboSet().getApp();
 		String thisAttr = getMboValue().getAttributeName();
-		if (appName.equalsIgnoreCase("UDPRZEE")) {
-			listSet.setWhere(" itemnum = '"+itemnum+"' ");
+		if (appName.equalsIgnoreCase("UDPRZEE") && !itemnum.equalsIgnoreCase("")) {
+			listSet.setWhere(" itemnum = '" + itemnum + "' ");
+		} else if (appName.equalsIgnoreCase("UDPRZEE") && itemnum.equalsIgnoreCase("")) {
+			listSet.setWhere(" type = 'SERVICE' ");
 		}
 		return listSet;
 	}

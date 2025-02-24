@@ -26,6 +26,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -55,7 +56,9 @@ import psdi.util.MXCipher;
 import psdi.util.MXException;
 
 public class CommonUtil {
-
+	
+	private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+	
 	/**
 	 * 
 	 * @param tableName  表名(大写)
@@ -1275,4 +1278,21 @@ public class CommonUtil {
             return false;
         }
     }
+    
+	/**
+	 * 随机码
+	 * 
+	 * @param length
+	 * @return
+	 */
+	public static String generateRandomString(int length) {
+		Random random = new Random();
+		StringBuilder sb = new StringBuilder(length);
+		for (int i = 0; i < length; i++) {
+			int index = random.nextInt(CHARACTERS.length());
+			sb.append(CHARACTERS.charAt(index));
+		}
+		return sb.toString();
+	}
+	
 }

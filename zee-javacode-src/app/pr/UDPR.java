@@ -345,9 +345,9 @@ public class UDPR extends PR implements PRRemote {
 		createPOHeader.setValue("udrevnum", 0, 11L);
 		createPOHeader.setValue("udcompany", udcompany, 11L);
 		MboSetRemote prLineSet = this.getMboSet("PRLINE");
-		prLineSet.setWhere("prnum = '"+this.getString("prnum")+"' and udprevendor = '"+this.getString("vendor")+"' and itemnum in (select itemnum from udcontractline where gconnum in (select gconnum from udcontract where vendor = '"
-				+this.getString("vendor")+"' and status='APPR' and to_char(sysdate,'yyyy-mm-dd')>= to_char(startdate,'yyyy-mm-dd') and to_char(sysdate,'yyyy-mm-dd')<= to_char(enddate,'yyyy-mm-dd')"
-				+ "))");
+		prLineSet.setWhere("prnum = '"+this.getString("prnum")+"' and udprevendor = '"+this.getString("vendor")+"' and( itemnum in (select itemnum from udcontractline where gconnum in (select gconnum from udcontract where vendor = '"
+				+this.getString("vendor")+"' and status='APPR' and udcompany = 'ZEE' and to_char(sysdate,'yyyy-mm-dd')>= to_char(startdate,'yyyy-mm-dd') and to_char(sysdate,'yyyy-mm-dd')<= to_char(enddate,'yyyy-mm-dd')"
+				+ ")) or (linetype in ('SERVICE','STDSERVICE'))) ");
 		prLineSet.reset();
 		if (!prLineSet.isEmpty() && prLineSet.count() > 0) {
 			MboRemote oldprlineRemote = prLineSet.getMbo(0);
@@ -370,7 +370,83 @@ public class UDPR extends PR implements PRRemote {
 		boolean prAlreadyClosed = this.getInternalStatus().equalsIgnoreCase("COMP");
 		if (!prAlreadyClosed
 				&& this.getMboServer().getMaxVar().getBoolean("PRCHANGE", this.getOrgSiteForMaxvar("PRCHANGE"))
-				&& this.isLineContNumFilled(prLineSet)) {
+				&& this.isLineContNumFilled(prLineSet) && this.getMboSet("UDCREVENDOR").count()==this.getMboSet("UDPRVENDOR").count()) {
+			String tempPONum = this.getTranslator().toExternalDefaultValue("PRSTATUS", "COMP", this);
+			if (this.getInternalStatus().equalsIgnoreCase("WAPPR")) {
+				MXServer.getBulletinBoard().post("pr.ALLOWWAPPRTOCLOSE", this.getUserInfo());
+			}
+			try {
+				this.changeStatus(tempPONum, MXServer.getMXServer().getDate(), "");
+			} finally {
+				if (this.getInternalStatus().equalsIgnoreCase("WAPPR")) {
+					MXServer.getBulletinBoard().remove("pr.ALLOWWAPPRTOCLOSE", this.getUserInfo());
+				}
+			}
+		}
+		return ponum;
+	}
+	
+	/**
+	 * 
+	 *  ZEE- PR创建PO
+	 *  DJY
+	 *  2024/7/4
+	 * 262-326
+	 */
+	public String addOnePOFromPR(String description) throws RemoteException, MXException {
+		UDPO createPOHeader = (UDPO) this.createPOHeaderFromPR("", description, this);
+		String ponum = createPOHeader.getString("ponum");
+		String personid = this.getUserInfo().getPersonId();
+		Date currentDate = MXServer.getMXServer().getDate();
+		String udapptype = this.getString("udapptype");
+		Date requireddate = this.getDate("requireddate");
+		String udmatstatus = this.getString("udmatstatus");
+		String currency = this.getString("udcurrency");
+		String udcompany = this.getString("udcompany");
+		double ukurs = 1;
+		if (!this.isNull("udukurs")) {
+			ukurs = this.getDouble("udukurs");
+		}
+		String apptype = udapptype.replaceAll("PR", "PO");
+		createPOHeader.setValue("udapptype", apptype, 11L);
+		createPOHeader.setValue("udpurplat", "DPO", 11L);
+		createPOHeader.setValue("udcreateby", personid, 2L);
+		createPOHeader.setValue("udcreatetime", currentDate, 11L);
+		createPOHeader.setValue("requireddate", requireddate, 11L);
+		createPOHeader.setValue("udmatstatus", udmatstatus, 11L);
+		createPOHeader.setValue("udcurrency", currency, 11L);
+		createPOHeader.setValue("udukurs", ukurs, 11L);
+		createPOHeader.setValue("udrevponum", ponum, 11L);
+		createPOHeader.setValue("udrevnum", 0, 11L);
+		createPOHeader.setValue("udcompany", udcompany, 11L);
+		MboSetRemote prLineSet = this.getMboSet("PRLINE");
+//		MboSetRemote prLineSet = MXServer.getMXServer().getMboSet("PRLINE", MXServer.getMXServer().getSystemUserInfo());
+		prLineSet.setWhere("prnum = '"+this.getString("prnum")+"' and udprevendor = '"+this.getString("vendor")+"' and( itemnum in (select itemnum from udcontractline where gconnum in (select gconnum from udcontract where vendor = '"
+				+this.getString("vendor")+"' and status='APPR' and udcompany = 'ZEE' and to_char(sysdate,'yyyy-mm-dd')>= to_char(startdate,'yyyy-mm-dd') and to_char(sysdate,'yyyy-mm-dd')<= to_char(enddate,'yyyy-mm-dd')"
+				+ ")) or (linetype in ('SERVICE','STDSERVICE'))) ");
+		prLineSet.reset();
+		if (!prLineSet.isEmpty() && prLineSet.count() > 0) {
+			MboRemote oldprlineRemote = prLineSet.getMbo(0);
+			String purchaseagent = oldprlineRemote.getString("udpurchaser");
+			if(!purchaseagent.equalsIgnoreCase("")){
+				System.out.println("PRLINE.UDPURCHASER");
+				createPOHeader.setValue("purchaseagent", purchaseagent, 2L);  //采购员需要换成PRLINE.UDPURCHASER,如果PRLINE.UDPURCHASER非空，则取第一条的采购员
+			}else{
+				System.out.println("PR.UDPURCHASER");
+				createPOHeader.setValue("purchaseagent", personid, 2L);//如果PRLINE.UDPURCHASER为空，则取PR当前创建人
+			}
+		}
+		if (!prLineSet.isEmpty() && prLineSet.count() > 0) {
+			for (int j = 0; prLineSet.getMbo(j) != null; j++) {
+				MboRemote createprlineRemote = prLineSet.getMbo(j);
+				MboSetRemote newPOLineSet = createPOHeader.getMboSet("POLINE");
+				createPOHeader.createPOLineFromPR(this, createprlineRemote, newPOLineSet);
+			}
+		}
+		boolean prAlreadyClosed = this.getInternalStatus().equalsIgnoreCase("COMP");
+		if (!prAlreadyClosed
+				&& this.getMboServer().getMaxVar().getBoolean("PRCHANGE", this.getOrgSiteForMaxvar("PRCHANGE"))
+				&& this.isLineContNumFilled(prLineSet) && this.getMboSet("UDCREVENDOR").count()==this.getMboSet("UDPRVENDOR").count()) {
 			String tempPONum = this.getTranslator().toExternalDefaultValue("PRSTATUS", "COMP", this);
 			if (this.getInternalStatus().equalsIgnoreCase("WAPPR")) {
 				MXServer.getBulletinBoard().post("pr.ALLOWWAPPRTOCLOSE", this.getUserInfo());

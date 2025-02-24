@@ -85,16 +85,39 @@ public class FldBudgetPurCost extends MboValueAdapter {
 		mbo.setValue("puringcost", purIngcost + purCompcost, 11L);// 采购已用
 		mbo.setValue("purrecost", mbo.getDouble("budgetcost") - purIngcost - purCompcost, 11L);// 采购剩余
 		
-		/**
-		 * ZEE - 物资创建固定资产释放PO预算
-		 * 89-99
-		 * 2025-1-14-18:00
+	    /**
+		 * ZEE-显示项目父预算、项目占用预算、项目剩余预算
+		 * 2025-02-21 14:35:47
+		 *144-177
 		 */
-		if(mbo.getString("udcompany").equalsIgnoreCase("ZEE")){
-		Double releasepolinebudget = mbo.getMboSet("UDMATFIXBUDGET").sum("linecost");
-		mbo.setValue("purcompcost", mbo.getDouble("purcompcost")-releasepolinebudget,11L);//释放接收完成
-		mbo.setValue("puringcost", mbo.getDouble("puringcost")+mbo.getDouble("purcompcost"), 11L);// 重新计算采购占用=在途采购+接收完成
-		mbo.setValue("purrecost", mbo.getDouble("budgetcost") - mbo.getDouble("puringcost") - mbo.getDouble("purcompcost"), 11L);// 重新计算采购剩余
+		if(mbo.getString("udcompany").equalsIgnoreCase("ZEE")){	
+			// 项目父预算
+			double udproparentcost = 0.00d;
+			// 项目父预算占用 
+			double udproparentocu = 0.00d;
+			MboSetRemote udprojectSet = mbo.getMboSet("UDPROJECT");
+			if (udprojectSet != null && !udprojectSet.isEmpty()) {
+				udproparentcost = udprojectSet.sum("budgetcost");
+				for(int i = 0; i<udprojectSet.count(); i++){
+					MboRemote udproject = udprojectSet.getMbo(i);
+					MboSetRemote woSet = udproject.getMboSet("UDWORKORDER");
+					if (woSet != null && !woSet.isEmpty()) {
+						for(int j = 0; j<woSet.count(); j++){
+							MboSetRemote wouseSet = woSet.getMbo(j).getMboSet("MATUSETRANS");
+							if (wouseSet != null && !wouseSet.isEmpty()) {
+								udproparentocu = udproparentocu + wouseSet.sum("linecost");
+							}
+						}
+					}
+					MboSetRemote matrecSet = udproject.getMboSet("UDMATRECTRANS");
+					if (matrecSet != null && !matrecSet.isEmpty()) {
+						udproparentocu = udproparentocu + matrecSet.sum("linecost");
+					}
+				}			
+				mbo.setValue("udproparentcost", udproparentcost, 11L);
+				mbo.setValue("udproparentocu", udproparentocu, 11L);
+				mbo.setValue("udproparentleft", udproparentcost - udproparentocu, 11L);	// 项目父预算剩余
+			}
 		}
 	}
 }

@@ -5,9 +5,7 @@ import guide.app.pr.UDPR;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 import psdi.mbo.MboRemote;
 import psdi.mbo.MboSetRemote;
@@ -37,16 +35,16 @@ public class UDPRVendorTableBean extends DataBean{
 //		 List<String> list4 = new ArrayList<String>();
 		MboSetRemote prvendorSet = owner.getMboSet("UDPRVENDOR");
 		if(prvendorSet.isEmpty()){//供应商list为空，则不允许创建
-			Object str0[] = { " No vendors here, you cannot create PO ! "};
+			Object str0[] = { "Notice： No vendors here, you cannot create PO ! "};
 			throw new MXApplicationException("instantmessaging", "tsdimexception",str0);
 		}
 		if(!owner.getString("status").equalsIgnoreCase("APPR") && !owner.getString("status").equalsIgnoreCase("RELEASE")){//PO状态不是APPR或RELEASE，则不允许创建
-			Object str1[] = { " You can only create PO if not approved or released! "};
+			Object str1[] = { "Notice： You can only create PO if not approved or released! "};
 			throw new MXApplicationException("instantmessaging", "tsdimexception",str1);
 		}
 		//如果PR勾选了使用RFQ则不允许在PR里点击创建PO按钮
 		if(owner.getString("udmakerfq").equalsIgnoreCase("Y")){
-			Object str2[] = { " You can only create PO because you tick 'using RFQ' !"};
+			Object str2[] = { "Notice： You can only create PO because you tick 'using RFQ' !"};
 			throw new MXApplicationException("instantmessaging", "tsdimexception",str2);
 		}
 		if(!prvendorSet.isEmpty() && prvendorSet.count() > 0){//整单创建只要有重复创建的供应商行，则不允许创建，并且弹框告知供应商编号
@@ -57,7 +55,7 @@ public class UDPRVendorTableBean extends DataBean{
 				}
 			}
 			if(!checklist.isEmpty()){	
-				Object str2[] = { " You cannot create PO duplicately for these vendors: " +checklist+" ! Maybe create batch po is a better choice ! "};
+				Object str2[] = { "Notice： You cannot create PO duplicately for these vendors: " +checklist+" ! Maybe create batch po is a better choice ! "};
 				throw new MXApplicationException("instantmessaging", "tsdimexception",str2);
 			}
 		}
@@ -69,43 +67,38 @@ public class UDPRVendorTableBean extends DataBean{
 				String prnum = prvendor.getString("prnum");
 				
 					MboSetRemote udcontractSet = MXServer.getMXServer().getMboSet("UDCONTRACT", MXServer.getMXServer().getSystemUserInfo());
-					udcontractSet.setWhere("vendor = '"+convendor+"' and status = 'APPR' and  to_char(sysdate,'yyyy-mm-dd')>= to_char(startdate,'yyyy-mm-dd') and to_char(sysdate,'yyyy-mm-dd')<= to_char(enddate,'yyyy-mm-dd') ");
+					udcontractSet.setWhere("vendor = '"+convendor+"' and status = 'APPR' and udcompany = 'ZEE' and  to_char(sysdate,'yyyy-mm-dd')>= to_char(startdate,'yyyy-mm-dd') and to_char(sysdate,'yyyy-mm-dd')<= to_char(enddate,'yyyy-mm-dd') ");
 					udcontractSet.reset();
 					if(!udcontractSet.isEmpty() && udcontractSet.count() > 0){
-						MboRemote udcontract = udcontractSet.getMbo(0);
-						MboSetRemote udcontractlineSet = udcontract.getMboSet("UDCONTRACTLINE");
+						String gconnum = udcontractSet.getMbo(0).getString("gconnum");
+						MboSetRemote udcontractlineSet = MXServer.getMXServer().getMboSet("UDCONTRACTLINE", MXServer.getMXServer().getSystemUserInfo());
+						udcontractlineSet.setWhere("gconnum = '"+gconnum+"' ");
+						udcontractlineSet.reset();
 						if(!udcontractlineSet.isEmpty() && udcontractlineSet.count() > 0){
 						for(int j = 0; j< udcontractlineSet.count(); j++){
 							list1.add(udcontractlineSet.getMbo(j).getString("itemnum"));
 						    }
 						}
-					}
+					}else{
 					MboSetRemote prlineSet = MXServer.getMXServer().getMboSet("PRLINE", MXServer.getMXServer().getSystemUserInfo());
 					prlineSet.setWhere("prnum ='"+prnum+"' and udprevendor = '"+convendor+"' ");
 					prlineSet.reset();
 					if(!prlineSet.isEmpty() && prlineSet.count() > 0){
 						for(int j = 0; j< prlineSet.count(); j++){
+							if(prlineSet.getMbo(j).getString("linetype").equalsIgnoreCase("ITEM")){
 							list2.add(prlineSet.getMbo(j).getString("itemnum"));
+								}
+						    }	
 						}
 					}
 			}
 			 List<String> list3 = new ArrayList<String>(list2);
 			 list3.removeAll(list1);//list3存放非合同的itemnum
-			 
-//				MboSetRemote prlineSet1 = MXServer.getMXServer().getMboSet("PRLINE", MXServer.getMXServer().getSystemUserInfo());
-//				prlineSet1.setWhere("prnum ='"+prnum+"' and (udprevendor is null or udprevendor='') ");
-//				prlineSet1.reset();
-//				if(!prlineSet1.isEmpty() && prlineSet1.count() > 0){
-//					for(int j = 0; j< prlineSet1.count(); j++){
-//						list3.add(prlineSet1.getMbo(j).getString("udprevendor"));
-//					}
-//				}
-			 
 			 HashSet<String> hashlist3 = new HashSet<>(list3);//hashlist3存放非合同的itemnum（去重）
 			 List<String> list4 = new ArrayList<String>(list2);
 			 list4.retainAll(list1);//list4存放合同的itemnum
 				if(!hashlist3.isEmpty()){	
-					clientSession.showMessageBox(this.clientSession.getCurrentEvent(), "", " You can not directly create PO if these items don't belong to contract! "+hashlist3, 1);
+					clientSession.showMessageBox(this.clientSession.getCurrentEvent(), "", "Notice： You can not directly create PO if these items don't belong to contract! "+hashlist3, 1);
 				}
 		}
 		
@@ -121,16 +114,22 @@ public class UDPRVendorTableBean extends DataBean{
 				//
 				MboSetRemote oldprlineSet = MXServer.getMXServer().getMboSet("PRLINE", MXServer.getMXServer().getSystemUserInfo());
 				oldprlineSet.setWhere("prnum = '"+prvendor.getString("prnum")+"' and udprevendor = '"+vendor+"' "
-						+ "and itemnum in (select itemnum from udcontractline where gconnum in (select gconnum from udcontract where vendor = '"+vendor+"' and status = 'APPR' and  to_char(sysdate,'yyyy-mm-dd')>= to_char(startdate,'yyyy-mm-dd') and to_char(sysdate,'yyyy-mm-dd')<= to_char(enddate,'yyyy-mm-dd') "
+						+ "and (itemnum in (select itemnum from udcontractline where gconnum in (select gconnum from udcontract where vendor = '"+vendor+"' and status = 'APPR' and udcompany = 'ZEE' and  to_char(sysdate,'yyyy-mm-dd')>= to_char(startdate,'yyyy-mm-dd') and to_char(sysdate,'yyyy-mm-dd')<= to_char(enddate,'yyyy-mm-dd') "
 						+ ")"
-						+ ")");
+						+ ") or (linetype in ('SERVICE','STDSERVICE')))");
 				oldprlineSet.reset();
 				if(!oldprlineSet.isEmpty() && oldprlineSet.count() > 0){
 				String ponum = owner.addAllPOFromPR(owner.getString("description"));
+				owner.setValue("vendor", "", 11L);//防止询价时出现税代码报错
+				if(!ponum.equalsIgnoreCase("")){
+					ponumlist.add(ponum);
+					vendorlist.add(prvendor.getString("vendor"));	
+					prvendor.setValue("udcreated", "1", 11L); 
+				}
 				this.app.getAppBean().save();
-				ponumlist.add(ponum);
-				vendorlist.add(prvendor.getString("vendor"));	
-				prvendor.setValue("udcreated", "1", 11L);
+//				ponumlist.add(ponum);
+//				vendorlist.add(prvendor.getString("vendor"));	
+//				prvendor.setValue("udcreated", "1", 11L); 
 				prvendorSet.save();
 				}
 				}
@@ -154,25 +153,29 @@ public class UDPRVendorTableBean extends DataBean{
 			 List<String> checkslist = new ArrayList<String>();
 			 List<String> list1 = new ArrayList<String>();
 			 List<String> list2 = new ArrayList<String>();
+			if (owner.toBeSaved()) {
+					Object[] obj = { "Notice： Please save first then click this button ！" };
+					throw new MXApplicationException("udmessage", "error1", obj);
+				}
 			 MboSetRemote prvendorSet = owner.getMboSet("UDPRVENDOR");
 			 MboSetRemote prvendorSet1 = owner.getMboSet("UDPRVENDOR");
 			 prvendorSet1.setWhere(" prnum ='"+owner.getInt("prnum")+"' and isawarded = '1' ");
 			 prvendorSet1.reset();
 				if(prvendorSet1.isEmpty()){//供应商list相应行未被授予，则不允许创建
-					Object str0[] = { " No awarded vendor here, you cannot create PO ! "};
+					Object str0[] = { "Notice： No awarded vendor here, you cannot create PO ! "};
 					throw new MXApplicationException("instantmessaging", "tsdimexception",str0);
 				}
 				if(prvendorSet.isEmpty()){//供应商list为空，则不允许创建
-					Object str0[] = { " No vendors here, you cannot create PO ! "};
+					Object str0[] = { "Notice： No vendors here, you cannot create PO ! "};
 					throw new MXApplicationException("instantmessaging", "tsdimexception",str0);
 				}
 				if(!owner.getString("status").equalsIgnoreCase("APPR") && !owner.getString("status").equalsIgnoreCase("RELEASE")){//PO状态不是APPR或RELEASE，则不允许创建
-					Object str1[] = { " You can only create PO if not approved or released! "};
+					Object str1[] = { "Notice： You can only create PO if not approved or released! "};
 					throw new MXApplicationException("instantmessaging", "tsdimexception",str1);
 				}
 				//如果PR勾选了使用RFQ则不允许在PR里点击创建PO按钮
 				if(owner.getString("udmakerfq").equalsIgnoreCase("Y")){
-					Object str2[] = { " You can only create PO because you tick 'using RFQ' !"};
+					Object str2[] = { "Notice： You can only create PO because you tick 'using RFQ' !"};
 					throw new MXApplicationException("instantmessaging", "tsdimexception",str2);
 				}
 				if(!prvendorSet.isEmpty() && prvendorSet.count() > 0){//逐行创建只要有选中重复创建的供应商行，则不允许创建，并且弹框告知供应商编号
@@ -183,10 +186,11 @@ public class UDPRVendorTableBean extends DataBean{
 						}
 					}
 					if(!checkslist.isEmpty()){	
-						Object str2[] = { " You cannot create PO duplicately for these vendors: " +checkslist+" ! "};
+						Object str2[] = { "Notice： You cannot create PO duplicately for these vendors: " +checkslist+" ! "};
 						throw new MXApplicationException("instantmessaging", "tsdimexception",str2);
 					}
 				}
+
 				
 				//如果PR供应商list的所有供应商属于非合同供应商，则不允许创建
 				if(!prvendorSet.isEmpty() && prvendorSet.count() > 0){
@@ -196,7 +200,7 @@ public class UDPRVendorTableBean extends DataBean{
 						String prnum = prvendor.getString("prnum");
 						
 							MboSetRemote udcontractSet = MXServer.getMXServer().getMboSet("UDCONTRACT", MXServer.getMXServer().getSystemUserInfo());
-							udcontractSet.setWhere("vendor = '"+convendor+"' and status = 'APPR' and  to_char(sysdate,'yyyy-mm-dd')>= to_char(startdate,'yyyy-mm-dd') and to_char(sysdate,'yyyy-mm-dd')<= to_char(enddate,'yyyy-mm-dd') ");
+							udcontractSet.setWhere("vendor = '"+convendor+"' and status = 'APPR' and udcompany = 'ZEE' and  to_char(sysdate,'yyyy-mm-dd')>= to_char(startdate,'yyyy-mm-dd') and to_char(sysdate,'yyyy-mm-dd')<= to_char(enddate,'yyyy-mm-dd') ");
 							udcontractSet.reset();
 							if(!udcontractSet.isEmpty() && udcontractSet.count() > 0){
 								String gconnum = udcontractSet.getMbo(0).getString("gconnum");
@@ -208,27 +212,30 @@ public class UDPRVendorTableBean extends DataBean{
 									list1.add(udcontractlineSet.getMbo(j).getString("itemnum"));
 								    }
 								}
-							}
+							}else{
 							MboSetRemote prlineSet = MXServer.getMXServer().getMboSet("PRLINE", MXServer.getMXServer().getSystemUserInfo());
 							prlineSet.setWhere("prnum ='"+prnum+"' and udprevendor = '"+convendor+"' ");
 							prlineSet.reset();
 							if(!prlineSet.isEmpty() && prlineSet.count() > 0){
 								for(int j = 0; j< prlineSet.count(); j++){
-									list2.add(prlineSet.getMbo(j).getString("itemnum"));
+									if(prlineSet.getMbo(j).getString("linetype").equalsIgnoreCase("ITEM")){
+										list2.add(prlineSet.getMbo(j).getString("itemnum"));
+											}
 								    }	
 							}
 					}
+				}
 					 List<String> list3 = new ArrayList<String>(list2);
 					 list3.removeAll(list1);//list3存放非合同的itemnum
 					 HashSet<String> hashlist3 = new HashSet<>(list3);//hashlist3存放非合同的itemnum（去重）
 					 List<String> list4 = new ArrayList<String>(list2);
 					 list4.retainAll(list1);//list4存放合同的itemnum
 						if(!hashlist3.isEmpty()){	
-							clientSession.showMessageBox(this.clientSession.getCurrentEvent(), "", " You can not directly create PO if these items don't belong to contract! "+hashlist3, 1);
+							clientSession.showMessageBox(this.clientSession.getCurrentEvent(), "", "Notice： You can not directly create PO if these items don't belong to contract! "+hashlist3, 1);
 						}
 				}
-				
-			 if(!prvendorSet.isEmpty() && prvendorSet.count() > 0 ){
+
+			 if(!prvendorSet.isEmpty() && prvendorSet.count() > 0  ){
 					for(int i = 0; i < prvendorSet.count(); i++){
 						MboRemote prvendor = prvendorSet.getMbo(i);
 						 boolean isawarded = prvendor.getBoolean("isawarded");
@@ -238,12 +245,13 @@ public class UDPRVendorTableBean extends DataBean{
 							//							
 							MboSetRemote oldprlineSet = MXServer.getMXServer().getMboSet("PRLINE", MXServer.getMXServer().getSystemUserInfo());
 							oldprlineSet.setWhere("prnum = '"+prvendor.getString("prnum")+"' and udprevendor = '"+vendor+"' "
-									+ "and itemnum in (select itemnum from udcontractline where gconnum in (select gconnum from udcontract where vendor = '"+vendor+"' and status = 'APPR' and  to_char(sysdate,'yyyy-mm-dd')>= to_char(startdate,'yyyy-mm-dd') and to_char(sysdate,'yyyy-mm-dd')<= to_char(enddate,'yyyy-mm-dd') "
+									+ "and (itemnum in (select itemnum from udcontractline where gconnum in (select gconnum from udcontract where vendor = '"+vendor+"' and status = 'APPR' and udcompany = 'ZEE' and  to_char(sysdate,'yyyy-mm-dd')>= to_char(startdate,'yyyy-mm-dd') and to_char(sysdate,'yyyy-mm-dd')<= to_char(enddate,'yyyy-mm-dd') "
 									+ ")"
-									+ ")");
+									+ ") or (linetype in ('SERVICE','STDSERVICE')))");
 							oldprlineSet.reset();
 						if(!oldprlineSet.isEmpty() && oldprlineSet.count() > 0){
-						String ponum = owner.addAllPOFromPR(owner.getString("description"));
+						String ponum = owner.addOnePOFromPR(owner.getString("description"));
+						owner.setValue("vendor", "", 11L);//防止询价时出现税代码报错
 						this.app.getAppBean().save();
 						ponumslist.add(ponum);
 						vendorslist.add(prvendor.getString("vendor"));	

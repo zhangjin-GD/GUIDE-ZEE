@@ -8,8 +8,9 @@ import psdi.server.AppServiceRemote;
 import psdi.util.MXException;
 
 public interface MobileServiceRemote extends AppServiceRemote {
-	
+
 	@WebMethod
-	public String WebServ(String userId, String langCode, String option, String data) throws RemoteException, MXException;
+	public String WebServ(String userId, String token, String langCode, String option, String data)
+			throws RemoteException, MXException;
 
 }
